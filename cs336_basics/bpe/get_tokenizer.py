@@ -18,7 +18,7 @@ class Tokenizer:
         
         for sp_token in self.special_tokens:
             sp_bytes = sp_token.encode("utf-8")
-            if sp_token not in self.revocab:
+            if sp_bytes not in self.revocab:
                 new_id = len(vocab)
                 self.vocab[new_id] = sp_bytes
                 self.revocab[sp_bytes] = new_id 
