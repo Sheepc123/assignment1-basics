@@ -8,13 +8,20 @@ class Tokenizer:
         self.vocab =vocab
         self.merges = merges
         
-        self.sepcial_tokens : list[str] = special_tokens if special_tokens is not None else []
+        self.special_tokens : list[str] = special_tokens if special_tokens is not None else []
         
         # revocab tokens->id
         self.revocab = {
             token : token_id
             for token_id,token in vocab.items()
         }
+        
+        for sp_token in self.special_tokens:
+            sp_bytes = sp_token.encode("utf-8")
+            if sp_token not in self.revocab:
+                new_id = len(vocab)
+                self.vocab[new_id] = sp_bytes
+                self.revocab[sp_bytes] = new_id 
             
 
     @classmethod      
@@ -33,14 +40,14 @@ class Tokenizer:
         token_ids : list[int] = []
         
         # text_spilted
-        ts = bpe.split_by_special(text,self.sepcial_tokens,drop_special = False)
+        ts = bpe.split_by_special(text,self.special_tokens,drop_special = False)
         
         for chunk in ts :
             if not chunk: 
                 continue
             
             
-            if chunk in self.sepcial_tokens:
+            if chunk in self.special_tokens:
                 token_id = self.revocab[chunk.encode("utf-8")]
                 token_ids.append(token_id)
                 continue
@@ -70,9 +77,7 @@ class Tokenizer:
     def decode(self, ids: list[int]) -> str:
         
         decode_text = b""
-        decode_text.join(self.vocab[token_id] for token_id in ids)
-        decode_text = decode_text.decode("utf-8", errors="replace")
-        
-        return decode_text
+        decode_text = decode_text.join(self.vocab[token_id] for token_id in ids).decode("utf-8", errors="replace")   
+        return decode_text  
         
         
