@@ -60,7 +60,7 @@ def find_chunk_boundaries(
 
 def tokenization(
     input_path: str | os.PathLike,
-    vocab_size: int,
+    vocab_size,
     special_tokens: list[str],
 ) -> tuple[dict[int, bytes], list[tuple[bytes, bytes]]]:
     # 提前准备正则匹配工具
