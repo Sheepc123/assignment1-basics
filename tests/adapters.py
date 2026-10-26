@@ -9,6 +9,8 @@ import torch
 from jaxtyping import Bool, Float, Int
 from torch import Tensor
 from cs336_basics.bpe.tokenization2 import train_bpe
+# sm self-moudle
+from cs336_basics.transformer import moudles as sm
 
 
 def run_linear(
@@ -17,6 +19,13 @@ def run_linear(
     weights: Float[Tensor, " d_out d_in"],
     in_features: Float[Tensor, " ... d_in"],
 ) -> Float[Tensor, " ... d_out"]:
+    
+    Liner = sm.Liner_Module(d_in,d_out)
+    Liner.load_state_dict({"w":weights})
+    output = Liner(in_features)
+    
+    
+    return output
     """
     Given the weights of a Linear layer, compute the transformation of a batched input.
 
@@ -29,8 +38,7 @@ def run_linear(
     Returns:
         Float[Tensor, "... d_out"]: The transformed output of your linear module.
     """
-
-    raise NotImplementedError
+   
 
 
 def run_embedding(
@@ -52,7 +60,11 @@ def run_embedding(
         Float[Tensor, "... d_model"]: Batch of embeddings returned by your Embedding layer.
     """
 
-    raise NotImplementedError
+    Embedding_module = sm.Embedding_moudle(vocab_size,d_model)
+    Embedding_module.load_state_dict({"w":weights})
+    result = Embedding_module(token_ids)
+    return result
+    
 
 
 def run_swiglu(
@@ -365,6 +377,15 @@ def run_rmsnorm(
     weights: Float[Tensor, " d_model"],
     in_features: Float[Tensor, " ... d_model"],
 ) -> Float[Tensor, " ... d_model"]:
+    
+    rmsnorm = sm.RMSNorm(d_model=d_model,eps=eps)
+    
+    rmsnorm.load_state_dict({"g":weights})
+    
+    return rmsnorm(in_features)
+    
+    
+    
     """Given the weights of a RMSNorm affine transform,
     return the output of running RMSNorm on the input features.
 
@@ -379,7 +400,7 @@ def run_rmsnorm(
         Float[Tensor,"... d_model"]: Tensor of with the same shape as `in_features` with the output of running
         RMSNorm of the `in_features`.
     """
-    raise NotImplementedError
+  
 
 
 def run_silu(in_features: Float[Tensor, " ..."]) -> Float[Tensor, " ..."]:
