@@ -160,7 +160,7 @@ def run_multihead_self_attention(
         implementation with the given QKV projection weights and input features.
     """
     mt_self_attetion = sm.mt_self_attention(d_model=d_model,num_heads= num_heads) 
-    sd = {"q_w":q_proj_weight,"K_w" : k_proj_weight,"V_w":v_proj_weight,"O_w" :o_proj_weight}
+    sd = {"Q_w.w":q_proj_weight,"K_w.w" : k_proj_weight,"V_w.w":v_proj_weight,"O_w.w" :o_proj_weight}
     mt_self_attetion.load_state_dict(sd)
     return mt_self_attetion(in_features)
     
@@ -209,7 +209,7 @@ def run_multihead_self_attention_with_rope(
                                             theta=theta,
                                             token_positions=token_positions) 
     
-    sd = {"q_w":q_proj_weight,"K_w" : k_proj_weight,"V_w":v_proj_weight,"O_w" :o_proj_weight}
+    sd = {"Q_w.w":q_proj_weight,"K_w.w" : k_proj_weight,"V_w.w":v_proj_weight,"O_w.w" :o_proj_weight}
     mt_self_attetion.load_state_dict(sd)
     
     return mt_self_attetion(in_features)
@@ -314,9 +314,8 @@ def run_transformer_block(
         d_ff=d_ff,
         num_heads=num_heads,
         theta=theta,
-        max_sequence_len=max_seq_len
-        
-        )
+        max_sequence_len=max_seq_len,
+    )
     
     param_map = [
         # Attention

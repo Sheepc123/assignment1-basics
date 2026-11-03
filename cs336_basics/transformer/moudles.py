@@ -71,13 +71,14 @@ class swiglu(nn.Module):
         
         self.d_model = d_model
         self.d_ff = d_ff
-        self.w1 = Liner_Module(d_ff,d_model)
-        self.w2 = Liner_Module(d_model,d_ff)
-        self.w3 = Liner_Module(d_ff,d_model)
+        self.w1 = Liner_Module(d_model,d_ff,device,dtype)
+        self.w2 = Liner_Module(d_ff,d_model,device,dtype)
+        self.w3 = Liner_Module(d_model,d_ff,device,dtype)
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
           
-       a = torch.sigmoid(self.w1(x))
+       a = self.w1(x)
+       a = a * torch.sigmoid(a)
        b = self.w3(x)
        
        return self.w2(torch.mul(a,b))
@@ -130,7 +131,7 @@ def softmax(x: torch.Tensor ,dim:int) -> torch.Tensor:
     
     max = x.max(dim = dim, keepdim= True).values
     
-    x_stable = max - x
+    x_stable =  x - max
     x_exp = torch.exp(x_stable)
     
     return x_exp / x_exp.sum(dim=dim,keepdim=True)
@@ -228,8 +229,18 @@ class mt_self_attention(nn.Module):
         )
         
         if self.rope is not None:
-            q = self.rope(q,self.token_poisitions)
-            k = self.rope(k,self.token_poisitions)
+            if self.token_poisitions is None:
+                positions = torch.arange(
+                    seq_len,
+                    device=x.device,
+                    dtype=torch.long
+                )
+            else:
+                positions = self.token_poisitions
+                
+                
+            q_pairs = self.rope(q_pairs,positions)
+            K_pairs = self.rope(K_pairs,positions)
         
         ans = scaled_dot_product(q_pairs,K_pairs,v_pairs,mask)
         
@@ -266,8 +277,8 @@ class Transformer_block(nn.Module):
         
         # phase1 
         y = x + self.mt_self_attention(self.RMSNorm1(x))
+       
         # phase 2
-        
         y = y + self.swiglu(self.RMSNorm2(y))
         
         return y
@@ -308,7 +319,7 @@ class Transformer_LM(nn.Module):
         self.vocab_size = vocab_size
         
         self.FNorm = RMSNorm(d_model=d_model, device=device,dtype=dtype)
-        self.FLiner = Liner_Module(d_model,d_model, device=device, dtype=dtype)
+        self.FLiner = Liner_Module(d_model,vocab_size, device=device, dtype=dtype)
         
     def forward(self,indice:torch.Tensor) -> torch.Tensor:
       
