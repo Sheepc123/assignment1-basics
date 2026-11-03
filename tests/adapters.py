@@ -446,27 +446,36 @@ def run_transformer_lm(
         ]
     
     for i in range(num_layers):
-        
         layer = cast(
-                sm.Transformer_block,
-                transformer_lm.layers[i]
+            sm.Transformer_block,
+            transformer_lm.layers[i]
         )
-        weights_map.extend(
-            [
-               (transformer_lm.layers[i].Q_w.w, f"layers.{i}.attn.q_proj.weight"),
-                (transformer_lm.layers[i].K_w.w, f"layers.{i}.attn.k_proj.weight"),
-                (transformer_lm.layers[i].V_w.w, f"layers.{i}.attn.v_proj.weight"),
-                (transformer_lm.layers[i].O_w.w, f"layers.{i}.attn.output_proj.weight"),
-                
-                (transformer_lm.layers[i].RMSNorm1.g, f"layers.{i}.ln1.weight"),
-                (transformer_lm.layers[i].RMSNorm2.g, f"layers.{i}.ln2.weight"),
-                
-                (transformer_lm.layers[i].swiglu.w1.w, f"layers.{i}.ffn.w1.weight"),
-                (transformer_lm.layers[i].swiglu.w2.w, f"layers.{i}.ffn.w2.weight"),
-                (transformer_lm.layers[i].swiglu.w3.w, f"layers.{i}.ffn.w3.weight"),
-                
-            ]
-        )
+
+        # Attention 内部的 Linear 模块
+        attn = layer.mt_self_attention
+
+        q_proj = cast(sm.Liner_Module, attn.Q_w)
+        k_proj = cast(sm.Liner_Module, attn.K_w)
+        v_proj = cast(sm.Liner_Module, attn.V_w)
+        o_proj = cast(sm.Liner_Module, attn.O_w)
+
+        weights_map.extend([
+            # Multi-Head Self-Attention
+            (q_proj.w, f"layers.{i}.attn.q_proj.weight"),
+            (k_proj.w, f"layers.{i}.attn.k_proj.weight"),
+            (v_proj.w, f"layers.{i}.attn.v_proj.weight"),
+            (o_proj.w, f"layers.{i}.attn.output_proj.weight"),
+
+            # RMSNorm
+            (layer.RMSNorm1.g, f"layers.{i}.ln1.weight"),
+            (layer.RMSNorm2.g, f"layers.{i}.ln2.weight"),
+
+            # SwiGLU
+            (layer.swiglu.w1.w, f"layers.{i}.ffn.w1.weight"),
+            (layer.swiglu.w2.w, f"layers.{i}.ffn.w2.weight"),
+            (layer.swiglu.w3.w, f"layers.{i}.ffn.w3.weight"),
+        ])
+
     
     with torch.no_grad():  
             for k,v in weights_map:
